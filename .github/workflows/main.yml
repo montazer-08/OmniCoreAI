@@ -2,45 +2,58 @@ name: Android Debug APK
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
-  build:
+  build-debug:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ سحب الكود
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      # 2️⃣ Node.js (مهم: Capacitor يحتاج >= 22)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build web
-        run: npm run build || true
-
-      - name: Capacitor Sync
-        run: npx cap sync android
-
+      # 3️⃣ Java (Android)
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
+      # 4️⃣ تثبيت الحزم
+      - name: Install dependencies
+        run: npm install
+
+      # 5️⃣ build للويب (حتى لو فشل يكمل)
+      - name: Build web
+        run: npm run build || true
+
+      # 6️⃣ تأكيد وجود مجلد assets (حل مشكلتك)
+      - name: Ensure Android assets dir exists
+        run: mkdir -p android/app/src/main/assets
+
+      # 7️⃣ Capacitor sync
+      - name: Capacitor Sync Android
+        run: npx cap sync android
+
+      # 8️⃣ بناء Debug APK
       - name: Build Debug APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
+      # 9️⃣ رفع الـ APK
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: OmniCoreAI-Debug-APK
+          path: android/app/build/outputs/apk/debug/*.apk
