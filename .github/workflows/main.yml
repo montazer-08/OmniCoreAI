@@ -24,6 +24,9 @@ jobs:
       - name: Build web
         run: npm run build || true
 
+      - name: Capacitor Sync
+        run: npx cap sync android
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
