@@ -1,62 +1,60 @@
 'use server';
-/**
- * @fileOverview A general purpose AI chat flow that supports streaming and model selection.
- *
- * - aiChat - A function that handles the chat process.
- * - AiChatInput - The input type for the aiChat function.
- * - AiChatOutput - The return type for the aiChat function.
- */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-import { ModelReference } from '@genkit-ai/google-genai';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 import { AI_PERSONALITIES } from '@/ai/personalities';
 
-
 const AiChatInputSchema = z.object({
-  query: z.string().describe("The user's query."),
-  overclock: z.boolean().optional().describe("Whether to use the more powerful AI model."),
-  personality: z.enum(Object.keys(AI_PERSONALITIES) as [keyof typeof AI_PERSONALITIES, ...(keyof typeof AI_PERSONALITIES)[]]).optional().describe('The selected AI personality.'),
-  futureYouMode: z.boolean().optional().describe('Whether to activate the Future You personality.')
+  query: z.string(),
+  overclock: z.boolean().optional(),
+  personality: z.enum(
+    Object.keys(AI_PERSONALITIES) as [
+      keyof typeof AI_PERSONALITIES,
+      ...(keyof typeof AI_PERSONALITIES)[]
+    ]
+  ).optional(),
+  futureYouMode: z.boolean().optional(),
 });
-export type AiChatInput = z.infer<typeof AiChatInputSchema>;
 
-// The output is a stream of strings
+export type AiChatInput = z.infer<typeof AiChatInputSchema>;
 export type AiChatOutput = ReadableStream<string>;
 
-export async function aiChat(input: AiChatInput, options?: { signal: AbortSignal }): Promise<{response: AiChatOutput}> {
-  
-  const model: ModelReference<'googleai'> = input.overclock 
-    ? 'googleai/gemini-2.5-flash' // The "Super" version as requested
-    : 'googleai/gemini-1.5-pro'; // The "Normal" powerful version
-    
+export async function aiChat(
+  input: AiChatInput,
+  options?: { signal: AbortSignal }
+): Promise<{ response: AiChatOutput }> {
+
+  // ✅ اختيار الموديل بالطريقة الصحيحة
+  const model = input.overclock
+    ? googleAI.model('gemini-2.5-flash')
+    : googleAI.model('gemini-1.5-pro');
+
+  // ✅ اختيار الشخصية
   let systemPrompt = AI_PERSONALITIES.default;
   if (input.futureYouMode) {
-      systemPrompt = AI_PERSONALITIES.futureYou;
+    systemPrompt = AI_PERSONALITIES.futureYou;
   } else if (input.personality) {
-      systemPrompt = AI_PERSONALITIES[input.personality];
+    systemPrompt = AI_PERSONALITIES[input.personality];
   }
 
-
-  const {stream, response} = await ai.generateStream({
+  // ✅ generateStream بالطريقة الرسمية
+  const { stream } = ai.generateStream({
     model,
     prompt: `${systemPrompt}
 
-Query: {{{query}}}
+User query:
+${input.query}
 `,
-    input: input,
     ...(options?.signal && { signal: options.signal }),
   });
 
-  const outputStream = new ReadableStream({
+  const outputStream = new ReadableStream<string>({
     async start(controller) {
       for await (const chunk of stream) {
-        controller.enqueue(chunk.text);
+        if (chunk.text) controller.enqueue(chunk.text);
       }
       controller.close();
-    },
-    cancel(reason) {
-      console.log('Stream canceled:', reason);
     },
   });
 
