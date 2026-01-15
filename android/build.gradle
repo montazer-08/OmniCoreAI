@@ -4,7 +4,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.2.2'
+        classpath "com.android.tools.build:gradle:8.9.1"
     }
 }
 
@@ -15,7 +15,6 @@ allprojects {
     }
 }
 
-/* 🔥 هذا الجزء هو الحل النهائي */
 subprojects {
     afterEvaluate { project ->
         if (project.hasProperty("android")) {
