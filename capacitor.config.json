@@ -1,0 +1,9 @@
+{
+  "appId": "com.omnicore.app",
+  "appName": "OmniCoreAI",
+  "webDir": "www",
+  "server": {
+    "url": "https://studio-drg3-ngx0im7s9-mlgs-projects-364499cd.vercel.app",
+    "cleartext": true
+  }
+}
