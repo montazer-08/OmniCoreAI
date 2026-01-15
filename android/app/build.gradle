@@ -21,6 +21,12 @@ android {
             ), 'proguard-rules.pro'
         }
     }
+
+    // 🔴 هذا هو السطر الحاسم للمشكلة
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
 }
 
 repositories {
